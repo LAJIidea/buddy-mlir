@@ -67,6 +67,7 @@ void registerLowerGemminiPass();
 void registerLowerLinalgToGemminiPass();
 void registerPolyhedralTilingPass();
 void registerPolyhedralTileAndFusePass();
+void registerGenericVectorizationPass();
 void registerDeviceSchedulePass();
 void registerLowerSchePass();
 } // namespace buddy
@@ -101,6 +102,7 @@ int main(int argc, char **argv) {
   // Register Polyhedral Optimize Pass.
   mlir::buddy::registerPolyhedralTilingPass();
   mlir::buddy::registerPolyhedralTileAndFusePass();
+  mlir::buddy::registerGenericVectorizationPass();
 
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
