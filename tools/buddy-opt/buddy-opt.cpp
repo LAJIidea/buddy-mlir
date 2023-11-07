@@ -67,6 +67,7 @@ void registerLowerGemminiPass();
 void registerLowerLinalgToGemminiPass();
 void registerPolyhedralTilingPass();
 void registerPolyhedralTileAndFusePass();
+void registerAffineLoopTilingPass();
 void registerGenericVectorizationPass();
 void registerDeviceSchedulePass();
 void registerLowerSchePass();
@@ -103,6 +104,7 @@ int main(int argc, char **argv) {
   mlir::buddy::registerPolyhedralTilingPass();
   mlir::buddy::registerPolyhedralTileAndFusePass();
   mlir::buddy::registerGenericVectorizationPass();
+  mlir::buddy::registerAffineLoopTilingPass();
 
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
