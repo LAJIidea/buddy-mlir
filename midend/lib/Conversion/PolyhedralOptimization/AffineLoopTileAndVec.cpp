@@ -10,6 +10,7 @@
 #include "mlir/IR/Iterators.h"
 #include "mlir/Pass/Pass.h"
 #include "llvm/Support/Debug.h"
+#include "mlir/Dialect/Arith/Utils/Utils.h"
 
 #include <iostream>
 
@@ -18,6 +19,13 @@
 using namespace mlir;
 
 namespace {
+
+struct TileLoopNest {
+  Value lower;
+  Value upper;
+  Value step;
+  AffineMap stripMap;
+};
 
 SmallVector<Range, 4> getLoopRanges(OpBuilder &b, Location loc, linalg::GenericOp *op) {
   AffineMap map = op->getLoopsToShapesMap();
@@ -37,25 +45,40 @@ struct GenericTilePattern : public ConversionPattern {
     auto linalgOp = dyn_cast<linalg::LinalgOp>(op);
     auto loc = op->getLoc();
     auto ctx = op->getContext();
-    // linalgOp.getShapesToLoopsMap().dump();
 
-    
-    SmallVector<int, 4> cacheReuses;
-    SmallVector<unsigned, 3> permutation{1, 2, 0};
-    auto maps = linalgOp.getIndexingMapsArray();
-    for (auto const map : maps) {
-      if (map.getNumResults() != map.getNumInputs()) {
-        // map.getPermutationMap(permutation, ctx).dump();
-        for (size_t i = 0; i < map.getNumResults(); ++i) {
-          // map.getNumDims
-          if (map.getDimPosition(i) != i)
-            cacheReuses.push_back(map.getDimPosition(i));
-        }
-      }
-      // rewriter.replaceAllUsesWith
+    // get loop nest
+    auto loopRanges = linalgOp.createLoopRanges(rewriter, loc);
+    auto iteratorTypes = linalgOp.getIteratorTypesArray();
+
+    // necessary?
+    // SmallVector<Value> iterArgInitValues = linalgOp.hasBufferSemantics()
+    //                                            ? SmallVector<Value>{}
+    //                                            : linalgOp.getDpsInitOperands();
+    // assert(iterArgInitValues.empty() && "unexpected AffineForOp empty values");
+    SmallVector<Value, 4> lbs, ubs, steps;
+    SmallVector<TileLoopNest, 4> tileLoops;
+
+    // tile - strip-mining-interchange
+
+    if (loopRanges.size() < tiles.size()) {
+      int start_index = tiles.size() - loopRanges.size();
+      tiles.drop_front(start_index);
+    } else if (loopRanges.size() > tiles.size()) {
+      tiles
     }
+    
+    for (Range range : loopRanges) {
+      lbs.push_back(getValueOrCreateConstantIndexOp(rewriter, loc, range.offset));
+      ubs.push_back(getValueOrCreateConstantIndexOp(rewriter, loc, range.size));
+      steps.push_back(getValueOrCreateConstantIndexOp(rewriter, loc, range.stride));
+    }
+
+    SmallVector<int64_t, 4> constantSteps;
+
     return failure();
   }
+
+  ArrayRef<int64_t> tiles;
 };
 
 struct AffineLoopTilePass
